@@ -50,8 +50,9 @@ def main():
     if args.seed is not None:
         random.seed(args.seed)
         torch.manual_seed(args.seed)
-        cudnn.deterministic = True
-        warnings.warn('You have chosen to seed training. This will turn on the CUDNN deterministic setting, which can slow down training considerably! May see unexpected behavior when restarting from checkpoints')
+        torch.cuda.manual_seed_all(42)
+        # cudnn.deterministic = True
+        # warnings.warn('You have chosen to seed training. This will turn on the CUDNN deterministic setting, which can slow down training considerably! May see unexpected behavior when restarting from checkpoints')
         
     if args.gpu is not None:
         warnings.warn('Have chosen a specific GPU. Will completely disable data parallelism')
@@ -208,7 +209,8 @@ def main_worker(gpu, ngpus_per_node, args):
                                             num_workers=args.workers, pin_memory=True)
     if args.evaluate:
         res = validate(val_loader, model, criterion, args)
-        with open('res.txt', 'w') as f:
+        filen = 'res' + args.arch + '.txt'
+        with open(filen, 'w') as f:
             print(res, file=f)
         return
     
@@ -218,10 +220,11 @@ def main_worker(gpu, ngpus_per_node, args):
         adjust_learning_rate(optimizer, epoch, args)
         
         # train for one epoch
+        print("For epoch {}".format(epoch))
         train(train_loader, model, criterion, optimizer, epoch, args)
         
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, args)
+        acc1 = validate(val_loader, model, criterion, epoch,args)
         
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
@@ -252,7 +255,8 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     end = time.time()
 
     # Open a CSV file to save the metrics
-    with open('training_metrics.csv', 'a', newline='') as csvfile:
+    filename = "training_metrics_" + args.arch + ".csv"
+    with open(filename, 'a', newline='') as csvfile:
         metric_writer = csv.writer(csvfile)
         if epoch == 0 and args.start_epoch == 0:
             # Write the header only once, at the beginning of the first epoch
@@ -288,11 +292,11 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             # Save metrics to CSV
             metric_writer.writerow([epoch, i, data_time.val, losses.val, batch_time.val, top1.val, top5.val])
 
-            if i % args.print_freq == 0:
-                progress.print(i)
+            # if i % args.print_freq == 0:
+            #     progress.print(i)
 
 
-def validate(val_loader, model, criterion, args):
+def validate(val_loader, model, criterion, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     losses = AverageMeter('Loss', ':.4e')
     top1 = AverageMeter('Acc@1', ':6.2f')
@@ -302,10 +306,11 @@ def validate(val_loader, model, criterion, args):
 
     # switch to evaluate mode
     model.eval()
+    filename = 'validation_metrics_' + args.arch + '.csv'
 
     with torch.no_grad():
         end = time.time()
-        with open('validation_metrics.csv', 'a', newline='') as csvfile:
+        with open(filename, 'a', newline='') as csvfile:
             metric_writer = csv.writer(csvfile)
             if args.start_epoch == 0:
                 # Write the header only once, at the beginning of the first epoch
@@ -331,10 +336,10 @@ def validate(val_loader, model, criterion, args):
                 end = time.time()
 
                 # Save metrics to CSV
-                metric_writer.writerow([args.epochs, i, losses.val, batch_time.val, top1.val, top5.val])
+                metric_writer.writerow([epoch, i, losses.val, batch_time.val, top1.val, top5.val])
 
-                if i % args.print_freq == 0:
-                    progress.print(i)
+                # if i % args.print_freq == 0:
+                #     progress.print(i)
 
             print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
                   .format(top1=top1, top5=top5))

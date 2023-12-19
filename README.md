@@ -63,7 +63,12 @@ sbatch job.sh
 
 - Adjust the `--dataset` flag for the dataset to be used for the model like food101 or cifar100 for this project.
 ## DataLoading + Training Time Results
-**![Image1](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)![Image2](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Food101.png)**
+<p float="left">
+  <img src="https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png" width="400" />
+  <img src="https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Food101.png" width="400" />
+</p>
+**![Image1](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)**
+**![Image2](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Food101.png)**
 **![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_2_GPUs_Cifar-100.png)**
 **![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_2_GPUs_Food101.png)**
 **![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_4_GPUs_Cifar-100.png)**

@@ -18,8 +18,8 @@ EfficientNet models are known for their efficiency and scalability. By profiling
 To set up your environment to run the code, follow these steps:
 
 ```bash
-git clone https://github.com/your-repository/efficientnet-profiling.git
-cd efficientnet-profiling
+git clone https://github.com/Pratham-mehta/OptimizedEfficientNets.git
+cd OptimizedEfficientNets
 pip install -r requirements.txt
 ```
 
@@ -27,7 +27,7 @@ pip install -r requirements.txt
 
 To start profiling and training of the EfficientNet model, run:
 
-1. Connect to NYU HPC using [Open on demand]([Log in to NYU HPC OnDemand](https://ood-2.hpc.nyu.edu:5554/auth/ldap?req=wlclz6y2ppvz4r5h5iszxi7ht))  or through `ssh` method 
+1. Connect to NYU HPC using [Open on demand](https://ood-2.hpc.nyu.edu:5554/auth/ldap?req=wlclz6y2ppvz4r5h5iszxi7ht)  or through `ssh` method 
    
    > Make sure you are connected on NYU VPN through cisco Anyconnect
 
@@ -117,4 +117,4 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 Somik Dhar - sd5023@nyu.edu
 
-Project Link: https://github.com/your-repository/efficientnet-profiling
+Project Link: https://github.com/Pratham-mehta/OptimizedEfficientNets

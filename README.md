@@ -1,4 +1,4 @@
-# Profiling Efficientnet on Cifar100 and Food101
+# Profiling EfficientNets on Multi-GPU Systems
 
 This project involves evaluation and profiling of the training of EfficientNet B0, B3 and B5 models on 1,2 and 4 GPUs using the Cifar100 and Food101 dataset. The aim is to understand the computational resource utilization, identify bottlenecks, and optimize model efficiency across different GPU configurations.
 

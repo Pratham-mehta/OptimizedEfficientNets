@@ -63,7 +63,7 @@ sbatch job.sh
 
 - Adjust the `--dataset` flag for the dataset to be used for the model like food101 or cifar100 for this project.
 ## DataLoading + Training Time Results
-**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)**
+**![Training + DataLoading Times For CIFAR-100 Dataset using 1 GPU](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)**
 ## Profiling Results
 
 The profiling results are shown below:

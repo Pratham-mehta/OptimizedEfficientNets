@@ -6,7 +6,7 @@ import shutil
 import time
 import warnings
 import PIL
-
+import math
 import torch
 import torch.nn as nn
 import torch.nn.parallel
@@ -20,8 +20,14 @@ import torchvision.transforms as transforms
 import torchvision.datasets as datasets
 import torchvision.models as models
 import csv
-parser = argparse.ArgumentParser(description='Pytorch EfficientNet ImageNet Training')
-parser.add_argument('--data_path',default='/vast/sd5023/ImageNet/imagenet',type = str, help='Path to Dataset')
+import torchvision
+from torchvision.datasets import CIFAR100
+from torch.utils.data import DataLoader, random_split
+from torch.profiler import profile, record_function, ProfilerActivity
+
+
+parser = argparse.ArgumentParser(description='Pytorch EfficientNet CIFAR-100 Training(finetuning)')
+# parser.add_argument('--data_path',default='/vast/sd5023/ImageNet/imagenet',type = str, help='Path to Dataset')
 parser.add_argument('--arch', default='efficientnet_b0',type=str, choices=['efficientnet_b0','efficientnet_b1','efficientnet_b2','efficientnet_b3','efficientnet_b4','efficientnet_b5','efficientnet_b6','efficientnet_b7'])
 parser.add_argument('--workers',default=4, type=int, help='number of dataloading workers')
 parser.add_argument('--epochs', default=50, type=int,help='number of total epochs to run')
@@ -38,6 +44,7 @@ parser.add_argument('--dist-backend', default='nccl', type=str, help='distribute
 parser.add_argument('--gpu', default=None, type=int, help='GPU id to use')
 parser.add_argument('--print_freq', default=10, type=int, help='print frequency')
 parser.add_argument('--resume', default='',type=str, help='path to latest checkpoint')
+parser.add_argument('--dataset', type=str, help=['cifar', 'food'])
 parser.add_argument('--evaluate', dest='evaluate', action='store_true', help='evaluate model on validation set')
 parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str, help='url used to set up distributed training')
 parser.add_argument('--multiprocessing-distributed', action='store_true', help='Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use Pytorch for either single node or multi node dataparallel training')
@@ -88,23 +95,55 @@ def main_worker(gpu, ngpus_per_node, args):
             args.rank = args.rank * ngpus_per_node + gpu
             
         dist.init_process_group(backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank)
+     
+    if args.dataset == 'cifar':
+        num_classes = 100
+    elif args.dataset == 'food':
+        num_classes = 101
         
+    
     if args.arch == 'efficientnet_b0':
-        model = models.efficientnet_b0(weights=None)
+        model = models.efficientnet_b0(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(1280, num_classes)
+            
     elif args.arch == 'efficientnet_b1':
-        model = models.efficientnet_b1(weights=None)
+        model = models.efficientnet_b1(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(1280, num_classes) 
+
     elif args.arch == 'efficientnet_b2':
-        model = models.efficientnet_b2(weights=None)
+        model = models.efficientnet_b2(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(1408, num_classes) 
     elif args.arch == 'efficientnet_b3':
-        model = models.efficientnet_b3(weights=None)
+        model = models.efficientnet_b3(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(1536, num_classes)
     elif args.arch == 'efficientnet_b4':
-        model = models.efficientnet_b4(weights=None)
+        model = models.efficientnet_b4(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(1792, num_classes) 
     elif args.arch == 'efficientnet_b5':
-        model = models.efficientnet_b5(weights=None)
+        model = models.efficientnet_b5(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(2048, num_classes)
     elif args.arch == 'efficientnet_b6':
-        model = models.efficientnet_b6(weights=None)
+        model = models.efficientnet_b6(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(2304, num_classes) 
     elif args.arch == 'efficientnet_b7':
-        model = models.efficientnet_b7(weights=None)
+        model = models.efficientnet_b7(weights='DEFAULT')
+        model.classifier[1] = nn.Linear(2560, num_classes)
+        
+    #Freeze the pre-trained layers
+    
+    
+    # print(model.parameters)
+    # Modify the classifier for CIFAR-100 (100 classes)
+    # Modify classifier
+    # model.classifier[1] = nn.Linear(1280, 100) 
+        # Freeze feature parameters
+    for param in model.features.parameters():
+        param.requires_grad = False
+        
+    # Classifier parameters   
+    for param in model.classifier.parameters():
+        param.requires_grad = True
+    
         
     if args.distributed:
         # For multiprocessing distributed, DistributedDataParallel constructor should always set the single device scope, otherwise, DistributedDataParallel will use all availaible devices
@@ -154,8 +193,8 @@ def main_worker(gpu, ngpus_per_node, args):
     cudnn.benchmark = True
     
     # DataLoading code
-    traindir = os.path.join(args.data_path, 'train')
-    valdir = os.path.join(args.data_path, 'val')
+    # traindir = os.path.join(args.data_path, 'train')
+    # valdir = os.path.join(args.data_path, 'val')
     
     normalize = transforms.Normalize(mean=[0.485,0.456,0.406],std=[0.229,0.224,0.225])
     
@@ -176,15 +215,33 @@ def main_worker(gpu, ngpus_per_node, args):
     elif args.arch == 'efficientnet_b7':
         image_size = 600
         
-    train_dataset = datasets.ImageFolder(
-        traindir,
-        transforms.Compose([
+    transform_dataset = transforms.Compose([
             transforms.RandomResizedCrop(image_size),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
-        ]))
+        ])
     
+    if args.dataset == 'cifar':
+        cifar100_dataset = torchvision.datasets.CIFAR100(root='./data', train=True, download=True, transform = transform_dataset)
+        train_size = int(0.8 * len(cifar100_dataset))
+        val_size = len(cifar100_dataset) - train_size
+        train_dataset, val_dataset = random_split(cifar100_dataset, [train_size, val_size])
+    elif args.dataset == 'food':
+        
+        # Create the Food101 dataset object.
+        food101_dataset = torchvision.datasets.Food101(root='./data', download=True, transform=transform_dataset)
+        
+        # Define the length of the training dataset (e.g., 70% of the entire dataset).
+        train_length = int(len(food101_dataset) * 0.7)
+        
+        # The rest will be used for the validation dataset.
+        val_length = len(food101_dataset) - train_length
+        
+        # Use the random_split function to split the Food101 dataset into training and validation datasets.
+        train_dataset, val_dataset = random_split(food101_dataset, [train_length, val_length])
+    
+
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(train_dataset)
     else:
@@ -195,16 +252,10 @@ def main_worker(gpu, ngpus_per_node, args):
                                               shuffle=(train_sampler is None),
                                               num_workers=args.workers, pin_memory=True,
                                               sampler=train_sampler)
+
     
-    val_transforms = transforms.Compose([
-        transforms.Resize(image_size, interpolation=PIL.Image.BICUBIC),
-        transforms.CenterCrop(image_size),
-        transforms.ToTensor(),
-        normalize,
-    ])
-    
-    print('Using image size: ', image_size)
-    val_loader = torch.utils.data.DataLoader(datasets.ImageFolder(valdir, val_transforms),
+    # print('Using image size: ', image_size)
+    val_loader = torch.utils.data.DataLoader(val_dataset,
                                             batch_size=args.batch_size,shuffle=False,
                                             num_workers=args.workers, pin_memory=True)
     if args.evaluate:
@@ -213,19 +264,57 @@ def main_worker(gpu, ngpus_per_node, args):
         with open(filen, 'w') as f:
             print(res, file=f)
         return
+    # Integration of Profiler
+    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+        with record_function("main_worker"):
+            # Call the modified training function
+            train_with_profiler(train_loader,val_loader, model, criterion, optimizer, args)
+
+    # Print the profiling results
+    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
     
+    print("Training begun")
+    
+    # for epoch in range(args.start_epoch, args.epochs):
+    #     if args.distributed:
+    #         train_sampler.set_epoch(epoch)
+    #     adjust_learning_rate(optimizer, epoch, args)
+        
+    #     # train for one epoch
+    #     print("For epoch {}".format(epoch))
+    #     train(train_loader, model, criterion, optimizer, epoch, args)
+        
+    #     # evaluate on validation set
+    #     acc1 = validate(val_loader, model, criterion, epoch,args)
+        
+    #     # remember best acc@1 and save checkpoint
+    #     is_best = acc1 > best_acc1
+    #     best_acc1 = max(acc1, best_acc1)
+
+    #     if not args.multiprocessing_distributed or (args.multiprocessing_distributed
+    #             and args.rank % ngpus_per_node == 0):
+    #         save_checkpoint({
+    #             'epoch': epoch + 1,
+    #             'arch': args.arch,
+    #             'state_dict': model.state_dict(),
+    #             'best_acc1': best_acc1,
+    #             'optimizer' : optimizer.state_dict(),
+    #         }, is_best,filename='/scratch/sd5023/HPML/Course_Project/save_path/checkpoint.pth.tar')
+            
+def train_with_profiler(train_loader, val_loader,model, criterion, optimizer, args):
+    global best_acc1
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         adjust_learning_rate(optimizer, epoch, args)
-        
+
         # train for one epoch
         print("For epoch {}".format(epoch))
         train(train_loader, model, criterion, optimizer, epoch, args)
-        
+
         # evaluate on validation set
-        acc1 = validate(val_loader, model, criterion, epoch,args)
-        
+        acc1 = validate(val_loader, model, criterion, epoch, args)
+
         # remember best acc@1 and save checkpoint
         is_best = acc1 > best_acc1
         best_acc1 = max(acc1, best_acc1)
@@ -237,10 +326,11 @@ def main_worker(gpu, ngpus_per_node, args):
                 'arch': args.arch,
                 'state_dict': model.state_dict(),
                 'best_acc1': best_acc1,
-                'optimizer' : optimizer.state_dict(),
-            }, is_best,filename='/scratch/sd5023/HPML/Course_Project/save_path/checkpoint.pth.tar')
+                'optimizer': optimizer.state_dict(),
+            }, is_best, filename='/scratch/sd5023/HPML/Course_Project/save_path/profiler/checkpoint.pth.tar')
             
-
+            
+            
 def train(train_loader, model, criterion, optimizer, epoch, args):
     batch_time = AverageMeter('Time', ':6.3f')
     data_time = AverageMeter('Data', ':6.3f')
@@ -255,12 +345,27 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
     end = time.time()
 
     # Open a CSV file to save the metrics
-    filename = "training_metrics_" + args.arch + ".csv"
+    num_gpus_str = str(torch.cuda.device_count())
+    filename = "training_metrics_" + args.arch + '_' + num_gpus_str +  "_profiler_" + args.dataset + ".csv"
     with open(filename, 'a', newline='') as csvfile:
         metric_writer = csv.writer(csvfile)
         if epoch == 0 and args.start_epoch == 0:
             # Write the header only once, at the beginning of the first epoch
             metric_writer.writerow(['Epoch', 'Batch', 'Data Time', 'Loss', 'Batch Time', 'Acc@1', 'Acc@5'])
+            
+            
+        # Define the main training function
+        # def train_with_profiler(train_loader, model, criterion, optimizer, epoch, args):
+        #     with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+        #         with record_function("train"):
+        #             train(train_loader, model, criterion, optimizer, epoch, args)
+
+        #     # Print the profiling results
+        #     print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+
+        # # Call the modified training function
+        # train_with_profiler(train_loader, model, criterion, optimizer, epoch, args)
+
 
         for i, (images, target) in enumerate(train_loader):
             # measure data loading time
@@ -288,12 +393,13 @@ def train(train_loader, model, criterion, optimizer, epoch, args):
             # measure elapsed time
             batch_time.update(time.time() - end)
             end = time.time()
-
+            # Explicitly free unused GPU memory
+            torch.cuda.empty_cache()
             # Save metrics to CSV
             metric_writer.writerow([epoch, i, data_time.val, losses.val, batch_time.val, top1.val, top5.val])
 
-            # if i % args.print_freq == 0:
-            #     progress.print(i)
+            if i % args.print_freq == 0:
+                progress.print(i)
 
 
 def validate(val_loader, model, criterion, epoch, args):
@@ -306,7 +412,8 @@ def validate(val_loader, model, criterion, epoch, args):
 
     # switch to evaluate mode
     model.eval()
-    filename = 'validation_metrics_' + args.arch + '.csv'
+    num_gpus_str = str(torch.cuda.device_count())
+    filename = 'validation_metrics_' + args.arch +'_'+ num_gpus_str + '_profiler_' + args.dataset +'.csv'
 
     with torch.no_grad():
         end = time.time()
@@ -338,8 +445,8 @@ def validate(val_loader, model, criterion, epoch, args):
                 # Save metrics to CSV
                 metric_writer.writerow([epoch, i, losses.val, batch_time.val, top1.val, top5.val])
 
-                # if i % args.print_freq == 0:
-                #     progress.print(i)
+                if i % args.print_freq == 0:
+                    progress.print(i)
 
             print(' * Acc@1 {top1.avg:.3f} Acc@5 {top5.avg:.3f}'
                   .format(top1=top1, top5=top5))
@@ -396,7 +503,7 @@ class ProgressMeter(object):
 
 def adjust_learning_rate(optimizer, epoch, args):
     """Sets the learning rate to the initial LR decayed by 10 every 30 epochs"""
-    lr = args.lr * (0.1 ** (epoch // 30))
+    lr = args.lr * 0.5 * (1.0 + math.cos(math.pi * epoch / args.epochs))#(0.1 ** (epoch // 30))#
     for param_group in optimizer.param_groups:
         param_group['lr'] = lr
 

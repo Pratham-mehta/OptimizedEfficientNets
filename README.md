@@ -63,7 +63,14 @@ sbatch job.sh
 
 - Adjust the `--dataset` flag for the dataset to be used for the model like food101 or cifar100 for this project.
 ## DataLoading + Training Time Results
-**![Training + DataLoading Times For CIFAR-100 Dataset using 1 GPU](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Food101.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_2_GPUs_Cifar-100.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_2_GPUs_Food101.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_4_GPUs_Cifar-100.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_4_GPUs_Food101.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Cifar-100%20Top-1%20Accuracy.png)**
+**![](https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Food101-Top1%20Accuracy.png)**
 ## Profiling Results
 
 The profiling results are shown below:

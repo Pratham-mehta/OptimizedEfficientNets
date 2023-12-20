@@ -48,7 +48,7 @@ parser.add_argument('--dataset', type=str, help=['cifar', 'food'])
 parser.add_argument('--evaluate', dest='evaluate', action='store_true', help='evaluate model on validation set')
 parser.add_argument('--dist-url', default='tcp://224.66.41.62:23456', type=str, help='url used to set up distributed training')
 parser.add_argument('--multiprocessing-distributed', action='store_true', help='Use multi-processing distributed training to launch N processes per node, which has N GPUs. This is the fastest way to use Pytorch for either single node or multi node dataparallel training')
-
+parser.add_argument('--profile', default= False, type=bool, help='[True, False]')
 best_acc1 = 0
 
 def main():
@@ -265,41 +265,42 @@ def main_worker(gpu, ngpus_per_node, args):
             print(res, file=f)
         return
     # Integration of Profiler
-    with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
-        with record_function("main_worker"):
-            # Call the modified training function
-            train_with_profiler(train_loader,val_loader, model, criterion, optimizer, args)
-
-    # Print the profiling results
-    print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+    if args.profile:
+        with profile(activities=[ProfilerActivity.CPU, ProfilerActivity.CUDA], record_shapes=True) as prof:
+            with record_function("main_worker"):
+                # Call the modified training function
+                train_with_profiler(train_loader,val_loader, model, criterion, optimizer, args)
     
-    print("Training begun")
+        # Print the profiling results
+        print(prof.key_averages().table(sort_by="cuda_time_total", row_limit=10))
+    else:
+        print("Training begun")
+        
+        for epoch in range(args.start_epoch, args.epochs):
+            if args.distributed:
+                train_sampler.set_epoch(epoch)
+            adjust_learning_rate(optimizer, epoch, args)
+            
+            # train for one epoch
+            print("For epoch {}".format(epoch))
+            train(train_loader, model, criterion, optimizer, epoch, args)
+            
+            # evaluate on validation set
+            acc1 = validate(val_loader, model, criterion, epoch,args)
+            
+            # remember best acc@1 and save checkpoint
+            is_best = acc1 > best_acc1
+            best_acc1 = max(acc1, best_acc1)
     
-    # for epoch in range(args.start_epoch, args.epochs):
-    #     if args.distributed:
-    #         train_sampler.set_epoch(epoch)
-    #     adjust_learning_rate(optimizer, epoch, args)
-        
-    #     # train for one epoch
-    #     print("For epoch {}".format(epoch))
-    #     train(train_loader, model, criterion, optimizer, epoch, args)
-        
-    #     # evaluate on validation set
-    #     acc1 = validate(val_loader, model, criterion, epoch,args)
-        
-    #     # remember best acc@1 and save checkpoint
-    #     is_best = acc1 > best_acc1
-    #     best_acc1 = max(acc1, best_acc1)
-
-    #     if not args.multiprocessing_distributed or (args.multiprocessing_distributed
-    #             and args.rank % ngpus_per_node == 0):
-    #         save_checkpoint({
-    #             'epoch': epoch + 1,
-    #             'arch': args.arch,
-    #             'state_dict': model.state_dict(),
-    #             'best_acc1': best_acc1,
-    #             'optimizer' : optimizer.state_dict(),
-    #         }, is_best,filename='/scratch/sd5023/HPML/Course_Project/save_path/checkpoint.pth.tar')
+            if not args.multiprocessing_distributed or (args.multiprocessing_distributed
+                    and args.rank % ngpus_per_node == 0):
+                save_checkpoint({
+                    'epoch': epoch + 1,
+                    'arch': args.arch,
+                    'state_dict': model.state_dict(),
+                    'best_acc1': best_acc1,
+                    'optimizer' : optimizer.state_dict(),
+                }, is_best,filename='/scratch/sd5023/HPML/Course_Project/save_path/checkpoint.pth.tar')
             
 def train_with_profiler(train_loader, val_loader,model, criterion, optimizer, args):
     global best_acc1

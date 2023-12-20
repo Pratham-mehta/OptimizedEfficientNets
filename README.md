@@ -55,23 +55,13 @@ To train the model on different architectures use the following arguments:
 - Assign arguments `--profile` flag to `True` or `False` whether profiling is to be performed or not(default = False)
 - Adjust the `--dataset` flag to either `cifar` for CIFAR100 dataset or `food` for FOOD101 dataset
 
-```shell
-sbatch job1.sh
-```
 
-To perform profiling of the models, run this another sbatch file:
+A sample sbatch file has been provided to perform either training or profiling:
 
 ```shell
 sbatch job.sh
 ```
 
-- Replace `'efficientnet_b0'` with `'efficientnet_b3'` to train & profile the B3 model. Likewise for b5 model as well.
-
-- Adjust the `--arch` flag according to the model that you want to run (default is B0 model). 
-
-- Adjust the `--epochs` flag for training & profiling the model. 
-
-- Adjust the `--dataset` flag for the dataset to be used for the model like food101 or cifar100 for this project.
 ## DataLoading + Training Time Results
 <p float="left">
   <img src="https://github.com/Pratham-mehta/OptimizedEfficientNets/blob/main/Result%20Images/Batch_Time_1_GPUs_Cifar-100.png" width="400" />

@@ -14,11 +14,9 @@ By achieving these objectives, the project aims to enhance the scalability and e
 
 
 ## Requirements
-
-- Python 3.8.6
-- PyTorch
-- torchvision
-- CUDA-compatible GPUs (if running on GPU)
+- Python: 3.8 or higher
+- PyTorch: 1.10.0
+- torchvision: 0.11.1(for CUDA 11.6)
 
 ## Installation
 

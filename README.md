@@ -50,6 +50,10 @@ python download.py # To download food101 dataset
 
 4. Execute sbatch files to send it to slurm scheduler for running it on HPC.
 To train the model on different architectures use the following arguments:
+- Assign arguments `--arch` to `efficientnet-b0`, `efficientnet-b3` or `efficientnet-b5` depending on the architecture to train
+- Assign arguments `--epochs` flag to set up the number of epochs to run to train and profile
+- Assign arguments `--profile` flag to `True` or `False` whether profiling is to be performed or not(default = False)
+- Adjust the `--dataset` flag to either `cifar` for CIFAR100 dataset or `food` for FOOD101 dataset
 
 ```shell
 sbatch job1.sh

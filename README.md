@@ -36,7 +36,7 @@ To start profiling and training of the EfficientNet model, run:
    
    > Make sure you are connected on NYU VPN through cisco Anyconnect
 
-2. Upload the github project files through scp on NYU HPC
+2. Upload the GitHub project files through scp on NYU HPC
 
 3. Modify as per the requirements for the `sbatch` files, Once done, this is how you would run the python project files on terminal
    
@@ -48,7 +48,8 @@ module load python/intel/3.8.6
 python download.py # To download food101 dataset
 ```
 
-4. Execute sbatch files to send it to slurm scheduler for running it on HPC. 
+4. Execute sbatch files to send it to slurm scheduler for running it on HPC.
+To train the model on different architectures use the following arguments:
 
 ```shell
 sbatch job1.sh

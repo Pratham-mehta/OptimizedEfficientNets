@@ -1,4 +1,5 @@
 # <b>Profiling EfficientNets on Multi-GPU Systems</b>
+## Overview
 EfficientNets are a family of image classification models that achieve state-of-the-art accuracy, yet are an order of magnitude smaller and faster than previous models. They are developed based on AutoML and Compound Scaling. <br/>
 This project is a comprehensive evaluation and profiling of the training process of EfficientNet B0, B3, and B5 models across multiple GPU configurations. The models are trained on two distinct datasets: Cifar100 and Food101.
 
@@ -11,9 +12,6 @@ The primary objectives of this project are as follows:
 
 By achieving these objectives, the project aims to enhance the scalability and efficiency of training EfficientNet models on multi-GPU systems.
 
-## Overview
-
-EfficientNet models are known for their efficiency and scalability. By profiling these models on different GPU setups, we aim to provide insights into how they scale with increased computational resources and identify the key factors that influence training time and performance.
 
 ## Requirements
 

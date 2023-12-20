@@ -121,7 +121,9 @@ The profiling results are shown below:
 **![](https://lh7-us.googleusercontent.com/BxoQfOCZF4IiwdnEILicsdDsN0-gGO1vP5WygCW46DYeleGrbV6oRVucnP3rktdAvISQL4VFwqOEwLHXhsjfhz1yUWHk7gHOAwnbhT1Fox6KMNusxLm7jUEAXyk37hsYy_JLHDnDksjOMLp6slPR8iwpyg=s2048)**
 
 ## Observations
-
+- Due to small image sizes in CIFAR100, the top-1 accuracy was less than the top-1 accuracy for FOOD101 
+- Training Time for EfficinetNet-b5 > EfficientNet-b3 > EfficientNet-b0
+- With the increase in the number of GPUs the net batch time(i.e. Dataloading + training time) reduces for all architectures
 - EfficientNet B3 requires more computational resources than B0, reflected in higher CPU and CUDA times.
 - Data loading time remains a significant factor in training time and does not decrease proportionally with more GPUs.
 - Training time per epoch generally decreases with more GPUs, but the rate of decrease is less with more GPUs due to overheads.
